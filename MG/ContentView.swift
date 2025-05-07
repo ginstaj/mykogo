@@ -18,6 +18,12 @@ struct ContentView: View {
     @State private var currentPressed: String? = nil
     @State private var logMessage: String = ""
 
+    @State private var isLogging: Bool = false
+    @State private var transitionLog: [String] = []
+    //Iphone sharing? Haven't tested this
+    @State private var showShareSheet: Bool = false
+    @State private var logFileURL: URL?
+
     var body: some View {
         NavigationView {
             VStack {
@@ -70,7 +76,10 @@ struct ContentView: View {
                 // Start and Stop Buttons
                 HStack(spacing: 40) {
                     Button(action: {
-                        print("You are now logging your mileage")
+                        isLogging = true
+                        transitionLog.removeAll()
+                        logMessage = "You are now logging your mileage..."
+                        print("You are now logging your mileage...")
                     }) {
                         Text("Start")
                             .frame(width: 120, height: 50)
@@ -80,7 +89,10 @@ struct ContentView: View {
                     }
 
                     Button(action: {
-                        print("Your mileage has been logged")
+                        isLogging = false
+                        logMessage = "Your mileage has been logged!"
+                        exportLog()
+                        print("Your mileage has been logged!")
                     }) {
                         Text("Stop")
                             .frame(width: 120, height: 50)
@@ -94,19 +106,27 @@ struct ContentView: View {
             }
             .padding()
             .navigationBarTitle("Myko Go!旅するマイク", displayMode: .inline)
+            .sheet(isPresented: $showShareSheet) {
+                if let url = logFileURL {
+                    ShareSheet(activityItems: [url])
+                }
+            }
         }
     }
 
     // Create Site Button
     private func createBlueButton(_ title: String) -> some View {
         Button(action: {
-            print("\(title) pressed")
-
+            guard isLogging else { return }
+            
             lastPressed = currentPressed
             currentPressed = title
-
+            print("\(title) pressed")
+            
             if let from = lastPressed, let to = currentPressed, from != to {
-                logMessage = "\(from) to \(to)"
+                let transition = "\(from) > \(to)"
+                logMessage = transition
+                transitionLog.append(transition)
             }
         }) {
             Text(title)
@@ -119,7 +139,36 @@ struct ContentView: View {
         }
         .padding(4)
     }
+    
+    private func exportLog() {
+        let logText = transitionLog.joined(separator: "\n")
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+        let fileName = "MileageLog-\(formatter.string(from: Date())).txt"
+        
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        
+        do {
+            try logText.write(to: fileURL, atomically: true, encoding: .utf8)
+            logFileURL = fileURL
+            showShareSheet = true
+            print("Log saved to \(fileURL)")
+        } catch {
+            logMessage = "Failed to save log"
+            print("Error saving file: \(error)")
+        }
+    }
 }
+
+// ShareSheet
+struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+    }
 
 //@main //
 //struct MykoGoApp: App {
