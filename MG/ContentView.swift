@@ -1,43 +1,73 @@
-//
 //  ContentView.swift
 //  MykoGO
 //
-//  Created by Andrew Ginster on 5/5/25.
+//  Created by Andrew Ginster & Mike Ruiz on 5/5/25.
 //
  
 import SwiftUI
- 
+
 struct ContentView: View {
-    //Button names
+    // Button names
     let buttonNames = [
         "ADM", "Tech", "HS", "CAN/JH", "GCE",
         "SKY", "CME", "BME", "PVE", "ZEB"
     ]
- 
+
+    // Initialize the button press variables at a neutral state
+    @State private var lastPressed: String? = nil
+    @State private var currentPressed: String? = nil
+    @State private var logMessage: String = ""
+
     var body: some View {
         NavigationView {
             VStack {
-                Text("Myko Go!旅するマイク")
+                Text("Myko Go!")
                     .font(.largeTitle)
                     .padding()
- 
-                // Top 5 school sites on grid view
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5)) {
-                    ForEach(buttonNames.prefix(5), id: \.self) { title in
-                        createBlueButton(title)
+
+                // Grid Layout for site buttons
+                VStack(spacing: 20) {
+                    ForEach(0..<3, id: \.self) { row in
+                        HStack(spacing: 20) {
+                            ForEach(0..<3, id: \.self) { col in
+                                let index = row * 3 + col
+                                if index < buttonNames.count {
+                                    createBlueButton(buttonNames[index])
+                                }
+                            }
+                        }
+                    }
+
+                    // Centering the 10th button and adding an else condition to add an 11th or 12th if we need
+                    if buttonNames.count % 3 == 1 {
+                        HStack {
+                            Spacer()
+                            createBlueButton(buttonNames.last!)
+                            Spacer()
+                        }
+                    } else if buttonNames.count % 3 == 2 {
+                        HStack(spacing: 20) {
+                            Spacer()
+                            createBlueButton(buttonNames[buttonNames.count - 2])
+                            createBlueButton(buttonNames.last!)
+                            Spacer()
+                        }
                     }
                 }
                 .padding(.bottom, 20)
- 
-                // Bottom 5 school sites on the grid view
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5)) {
-                    ForEach(buttonNames.suffix(5), id: \.self) { title in
-                        createBlueButton(title)
-                    }
-                }
-                .padding(.bottom, 40)
- 
-                // Start and stop buttons
+
+                // School Site Logger Display
+                Text(logMessage)
+                    .font(.headline)
+                    .foregroundColor(.purple)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(10)
+                    .padding(.horizontal)
+                    .padding(.bottom, 20)
+
+                // Start and Stop Buttons
                 HStack(spacing: 40) {
                     Button(action: {
                         print("You are now logging your mileage")
@@ -48,7 +78,7 @@ struct ContentView: View {
                             .foregroundColor(.white)
                             .cornerRadius(10)
                     }
- 
+
                     Button(action: {
                         print("Your mileage has been logged")
                     }) {
@@ -59,34 +89,43 @@ struct ContentView: View {
                             .cornerRadius(10)
                     }
                 }
- 
+
                 Spacer()
             }
-            //Navigation Bar title
             .padding()
             .navigationBarTitle("Myko Go!旅するマイク", displayMode: .inline)
         }
     }
- 
-    // Button does THIS!!
+
+    // Create Site Button
     private func createBlueButton(_ title: String) -> some View {
         Button(action: {
-            print("\(title) Thank you for pressing the button. Ninjas are heading to your location")
+            print("\(title) pressed")
+
+            lastPressed = currentPressed
+            currentPressed = title
+
+            if let from = lastPressed, let to = currentPressed, from != to {
+                logMessage = "\(from) to \(to)"
+            }
         }) {
             Text(title)
-                .frame(width: 100, height: 50)
+                .font(.headline)
+                .frame(minWidth: 60, minHeight: 40)
+                .padding(.horizontal, 10)
                 .background(Color.blue)
                 .foregroundColor(.white)
-                .cornerRadius(10)
+                .cornerRadius(8)
         }
+        .padding(4)
     }
 }
- 
-//@main
-struct MykoGoApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
-    }
-}
+
+//@main //
+//struct MykoGoApp: App {
+    //var body: some Scene {
+        //WindowGroup {
+            //ContentView()
+        //}
+    //}
+//}
